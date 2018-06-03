@@ -16,6 +16,10 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * UnityProject calls connectAsServer() from Unity
+ * RemoteControlDevice calls connectAsClient() from MainActivity
+ */
 public class BluetoothController {
 
     private static final String TAG = "BT_CTRL";
@@ -30,9 +34,7 @@ public class BluetoothController {
     private BluetoothDevice bluetoothDevice;
 
     private DataOutputStream dataOut;
-
-    @SuppressWarnings("FieldCanBeLocal")
-    private final boolean isServer = true;
+    private OnMessageReceivedListener onMessageReceivedListener;
 
 
     public BluetoothController(Activity activity) {
@@ -47,13 +49,11 @@ public class BluetoothController {
             activity.startActivityForResult(enableBtIntent, 0);
         }
 
-        //noinspection ConstantConditions
-        if (isServer) {
-            connectAsServer();
-        } else {
-            connectAsClient();
-        }
 
+    }
+
+    public void addBluetoothListener(OnMessageReceivedListener onMessageReceivedListener) {
+        this.onMessageReceivedListener = onMessageReceivedListener;
     }
 
     private void connectAsServer() {
@@ -73,6 +73,7 @@ public class BluetoothController {
                 while (true) {
                     try {
                         socket = bluetoothServerSocket.accept();
+                        bluetoothSocket = socket;
                     } catch (IOException e) {
                         Log.e(TAG, "Could not close the connect socket", e);
                     }
@@ -95,7 +96,7 @@ public class BluetoothController {
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
 
         for (BluetoothDevice device : pairedDevices) {
-            if (device.getName().equals("Moto G (5)")) {
+            if (device.getName().equals("Moto G (5)") || device.getName().equals("Pixel 2")) {
                 bluetoothDevice = device;
             }
         }
@@ -108,7 +109,7 @@ public class BluetoothController {
         }
         bluetoothSocket = tmp;
 
-        Runnable r = new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -121,43 +122,58 @@ public class BluetoothController {
                     }
                     return;
                 }
+                Intent intent = new Intent("android.intent.action.MAIN").putExtra("TEXT", "connected");
+                activity.sendBroadcast(intent);
                 manageConnection(bluetoothSocket);
             }
-        };
+        }).start();
     }
 
-    public void write(String text){
+    public void write(String text) {
         try {
-            dataOut.write(text.getBytes());
+            if (dataOut != null) {
+                dataOut.write(text.getBytes());
+            } else {
+                Log.e(TAG, "Data Out is not available");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void manageConnection(BluetoothSocket socket) {
-        InputStream tmpIn;
-        OutputStream tmpOut;
+        InputStream tmpIn = null;
+        OutputStream tmpOut = null;
         byte[] buffer = new byte[256];
         int bytes;
         try {
             tmpIn = socket.getInputStream();
             tmpOut = socket.getOutputStream();
         } catch (IOException e) {
-            return;
+            Log.e(TAG, "IOException");
         }
 
         DataInputStream dataIn = new DataInputStream(tmpIn);
         dataOut = new DataOutputStream(tmpOut);
 
         try {
-            while (dataIn.available() > 0) {
-                bytes = dataIn.read(buffer);
-                String msg = new String(buffer, 0, bytes);
-                Log.i(TAG, "SUCCESS");
-                Log.i(TAG, msg);
+            while (true) {
+                if (dataIn.available() > 0) {
+                    bytes = dataIn.read(buffer);
+                    String msg = new String(buffer, 0, bytes);
 
-                Intent intent = new Intent("android.intent.action.MAIN").putExtra("TEXT", msg);
-                activity.sendBroadcast(intent);
+                    onMessageReceivedListener.onMessageReceived(msg);
+
+                    Log.i(TAG, "SUCCESS");
+                    Log.i(TAG, msg);
+
+
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -165,4 +181,11 @@ public class BluetoothController {
 
     }
 
+    public void startAsServer() {
+        connectAsServer();
+    }
+
+    public void startAsClient() {
+        connectAsClient();
+    }
 }

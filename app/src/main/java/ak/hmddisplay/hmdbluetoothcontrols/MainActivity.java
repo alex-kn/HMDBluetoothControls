@@ -1,5 +1,6 @@
 package ak.hmddisplay.hmdbluetoothcontrols;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -14,8 +15,7 @@ import ak.hmddisplay.bluetoothconnect.BluetoothController;
 
 public class MainActivity extends Activity {
 
-    TextView textView;
-    Button button;
+    TextView connectedTextView;
 
     private BroadcastReceiver receiver;
     BluetoothController btController;
@@ -24,10 +24,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        button = findViewById(R.id.button);
-        textView = findViewById(R.id.text);
-
-
+        connectedTextView = findViewById(R.id.connectedTextView);
         btController = new BluetoothController(this);
     }
 
@@ -40,18 +37,39 @@ public class MainActivity extends Activity {
             public void onReceive(Context context, Intent intent) {
                 String text = intent.getStringExtra("TEXT");
                 setText(text);
-
             }
         };
         this.registerReceiver(receiver, intentFilter);
     }
 
-    public void sendMsg(View view) {
-        btController.write("Bier");
+    public void sendOne(View view) {
+        btController.write("1");
+    }
+
+    public void sendTwo(View view) {
+        btController.write("2");
+    }
+
+    public void sendThree(View view) {
+        btController.write("3");
+    }
+
+    public void sendFour(View view) {
+        btController.write("4");
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void startAsClient(View view) {
+        connectedTextView.setText("connecting ...");
+        btController.startAsClient();
+    }
+
+    public void switchRepresentation(View view) {
+        btController.write("0");
     }
 
     public void setText(String text) {
-        textView.setText(text);
+        connectedTextView.setText(text);
     }
 
 }
