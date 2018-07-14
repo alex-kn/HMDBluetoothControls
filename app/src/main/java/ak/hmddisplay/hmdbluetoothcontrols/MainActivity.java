@@ -7,14 +7,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import ak.hmddisplay.bluetoothconnect.BluetoothController;
 
 public class MainActivity extends Activity {
 
-    TextView connectedTextView;
+    Button connectButton;
 
     private BroadcastReceiver receiver;
     BluetoothController btController;
@@ -23,7 +25,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        connectedTextView = findViewById(R.id.connectedTextView);
+        connectButton = findViewById(R.id.connectButton);
         btController = new BluetoothController(this);
     }
 
@@ -35,7 +37,7 @@ public class MainActivity extends Activity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String text = intent.getStringExtra("TEXT");
-                setText(text);
+                setButtonText(text);
             }
         };
         this.registerReceiver(receiver, intentFilter);
@@ -57,9 +59,14 @@ public class MainActivity extends Activity {
         btController.write("4");
     }
 
+    public void sendFive(View view) {
+        btController.write("5");
+    }
+
     @SuppressLint("SetTextI18n")
     public void startAsClient(View view) {
-        connectedTextView.setText("connecting ...");
+        connectButton.setText("connecting ...");
+        connectButton.setEnabled(false);
         btController.startAsClient();
     }
 
@@ -67,8 +74,8 @@ public class MainActivity extends Activity {
         btController.write("0");
     }
 
-    public void setText(String text) {
-        connectedTextView.setText(text);
-    }
+    public void setButtonText(String text) {
+        connectButton.setText(text);
 
+    }
 }

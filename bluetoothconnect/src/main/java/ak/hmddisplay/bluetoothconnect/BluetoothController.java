@@ -161,19 +161,18 @@ public class BluetoothController {
                 if (dataIn.available() > 0) {
                     bytes = dataIn.read(buffer);
                     String msg = new String(buffer, 0, bytes);
-
+                    msg = msg.substring(msg.length() - 1);
                     onMessageReceivedListener.onMessageReceived(msg);
 
-                    Log.i(TAG, "SUCCESS");
                     Log.i(TAG, msg);
 
 
                 }
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
